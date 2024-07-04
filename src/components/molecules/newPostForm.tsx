@@ -4,7 +4,7 @@ import {ref,uploadBytes} from "firebase/storage"
 import { bucket } from "../../lib/firebase";
 
 
-export default function NewPostForm() {
+export default function newPostForm() {
   const {isOpen, onOpen, onOpenChange} = useDisclosure();
   const { register, handleSubmit } = useForm();
   const storageRef = ref(bucket, 'posts/post1');
