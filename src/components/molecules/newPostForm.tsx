@@ -25,8 +25,8 @@ export default function newPostForm() {
       >
         <ModalContent>
           {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">Log in</ModalHeader>
+            <> 
+              <ModalHeader className="flex flex-col gap-1">Add Post</ModalHeader>
               <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
               <ModalBody>
                 <Input {...register("image")}
