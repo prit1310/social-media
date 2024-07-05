@@ -23,7 +23,7 @@ const Login = () => {
         navigate("/")
       }
     )
-    console.log(values)
+    console.log(values.email)
   }
   async function signInWithGoogle() {
     signInWithPopup(auth, provider).then(
