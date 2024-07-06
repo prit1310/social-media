@@ -27,7 +27,7 @@ const Register = () => {
     else {
       alert('password not same')
     }
-    console.log(values)
+    console.log(values.email)
   }
 
 

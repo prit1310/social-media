@@ -8,13 +8,15 @@ export default function newPostForm() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { register, handleSubmit } = useForm();
   const postRef = ref(bucket, 'posts/post3.jpeg')
-  getDownloadURL(postRef).then((url) => console.log(url))
+  getDownloadURL(postRef).then((url) => console.log(url)).catch((error)=>console.log(error))
 
   const storageRef = ref(bucket, 'posts/post3.jpeg');
 
   async function onSubmit(values: any) {
-    uploadBytes(storageRef, values.image).then((snapshot) => {
+    uploadBytes(storageRef, values.image[0]).then((snapshot) => {
       console.log('Uploaded a blob or file!', snapshot);
+    }).catch((error)=>{
+      console.log(error)
     });
   }
 

@@ -2,22 +2,21 @@ import { Button } from "@nextui-org/button"
 import { Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@nextui-org/react"
 import {Input} from "@nextui-org/input"
 import { useForm } from "react-hook-form"
-import { ref, set ,get,child} from "firebase/database";
-import { db ,auth} from "../../lib/firebase"
+import {auth,db} from "../../lib/firebase"
 import { useEffect, useState } from "react";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const Account = () => {
   const [userData,setUserData] = useState({bio:"",username:""})
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { register, handleSubmit } = useForm();
-
   useEffect(()=>{
-    get(child(ref(db), `users/${auth.currentUser?.uid}`)).then((snapshot) => {
+    getDoc(doc(db,`users/${auth.currentUser?.uid}`)).then((snapshot) => {
     if (snapshot.exists()) {
-      console.log(snapshot.val());
+      console.log(snapshot.data());
       setUserData({
-        username:snapshot.val().username,
-        bio:snapshot.val().bio
+        username:snapshot.data().username,
+        bio:snapshot.data().bio
       })
     } else {
       console.log("No data available");
@@ -27,11 +26,16 @@ const Account = () => {
   });
   },[])
   async function onSubmit(values:any) {
-    set(ref(db, 'users/' + auth.currentUser?.uid), {
+    try{
+    setDoc(doc(db, 'users/' +values.name), {
       username: values.name,
       bio:values.bio,
     });
-    console.log(values)
+    console.log("profile updated...")
+    }
+    catch(error){
+        console.log(error)
+    }
   }
   
   return (
