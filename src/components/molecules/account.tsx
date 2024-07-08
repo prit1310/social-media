@@ -1,43 +1,45 @@
-import { Button } from "@nextui-org/button"
-import { Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@nextui-org/react"
-import {Input} from "@nextui-org/input"
-import { useForm } from "react-hook-form"
-import {auth,db} from "../../lib/firebase"
+import { Button } from "@nextui-org/button";
+import { Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@nextui-org/react";
+import { Input } from "@nextui-org/input";
+import { useForm } from "react-hook-form";
+import { db, auth } from "../../lib/firebase";
 import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const Account = () => {
-  const [userData,setUserData] = useState({bio:"",username:""})
+  const [userData, setUserData] = useState({ bio: "", username: "" });
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const { register, handleSubmit } = useForm();
-  useEffect(()=>{
-    getDoc(doc(db,`users/${auth.currentUser?.uid}`)).then((snapshot) => {
-    if (snapshot.exists()) {
-      console.log(snapshot.data());
-      setUserData({
-        username:snapshot.data().username,
-        bio:snapshot.data().bio
+  useEffect(() => {
+    getDoc(doc(db, `users/${auth.currentUser?.email}`))
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          console.log(snapshot.data());
+          setUserData({
+            username: snapshot.data().username,
+            bio: snapshot.data().bio
+          });
+        } else {
+          console.log("No data available");
+        }
       })
-    } else {
-      console.log("No data available");
-    }
-  }).catch((error) => {
-    console.error(error);
-  });
+      .catch((error) => {
+        console.error("Error fetching user data:", error);
+      });
   },[])
-  async function onSubmit(values:any) {
-    try{
-    setDoc(doc(db, 'users/' +values.name), {
-      username: values.name,
-      bio:values.bio,
-    });
-    console.log("profile updated...")
-    }
-    catch(error){
-        console.log(error)
+
+  async function onSubmit(values: any) {
+    try {
+      await setDoc(doc(db, `users/${auth.currentUser?.email}`), {
+        username: values.name,
+        bio: values.bio,
+      });
+      console.log("profile updated...");
+    } catch (error) {
+      console.log(error);
     }
   }
-  
+
   return (
     <>
       <h1>Name: {userData.username}</h1>
@@ -80,7 +82,7 @@ const Account = () => {
         </ModalContent>
       </Modal>
     </>
-  )
+  );
 }
 
-export default Account
+export default Account;
