@@ -1,8 +1,9 @@
 import { Modal, ModalContent, ModalHeader, ModalBody, Button, useDisclosure, Input } from "@nextui-org/react";
 import { useForm } from "react-hook-form";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { bucket } from "../../lib/firebase"; 
+import { bucket,db } from "../../lib/firebase"; 
 import { useEffect, useState } from "react";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function NewPostForm() {
   const { isOpen, onOpen, onClose } = useDisclosure(); 
@@ -25,6 +26,12 @@ export default function NewPostForm() {
       setImgUrl(downloadURL); 
       window.alert('File uploaded successfully!');
       onClose(); 
+
+      await setDoc(doc(db,"posts","post1"),{
+        title:values.title,
+        description:values.description,
+        image:imgUrl,
+      })
     } catch (error) {
       console.error('Error uploading file:', error);
     }
@@ -32,8 +39,8 @@ export default function NewPostForm() {
 
   useEffect(() => {
     if (file) {
-      const storageRef = ref(bucket, `posts/${file}`);
-      getDownloadURL(storageRef)
+      const postRef = ref(bucket, `posts/${file}`);
+      getDownloadURL(postRef)
         .then((url:any) => {
           console.log('Download URL:', url);
           setImgUrl(url); 
@@ -60,6 +67,22 @@ export default function NewPostForm() {
                 type="file"
                 accept="image/*"
                 placeholder="Upload your image"
+                variant="bordered"
+              />
+               <Input
+                {...register("title")}
+                autoFocus
+                type="text"
+                label="Title"
+                placeholder="Write a title here"
+                variant="bordered"
+              />
+              <Input
+                {...register("description")}
+                autoFocus
+                type="text"
+                label="Description"
+                placeholder="Write a description here"
                 variant="bordered"
               />
             </ModalBody>
