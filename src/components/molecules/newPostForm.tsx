@@ -30,7 +30,7 @@ export default function NewPostForm() {
       await setDoc(doc(db,"posts","post1"),{
         title:values.title,
         description:values.description,
-        image:imgUrl,
+        image:downloadURL,
       })
     } catch (error) {
       console.error('Error uploading file:', error);
