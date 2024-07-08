@@ -35,6 +35,8 @@ const Account = () => {
         bio: values.bio,
       });
       console.log("profile updated...");
+      setUserData({ username: values.name, bio: values.bio });
+      onOpenChange();
     } catch (error) {
       console.log(error);
     }
