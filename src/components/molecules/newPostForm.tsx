@@ -28,7 +28,7 @@ export default function NewPostForm() {
       onClose(); 
 
       await setDoc(doc(db,"posts",filename),{
-        userId: currentUser.uid,
+        user: currentUser.email,
         title:values.title,
         description:values.description,
         imageUrl:downloadURL,
