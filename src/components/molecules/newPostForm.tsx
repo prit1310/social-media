@@ -1,21 +1,22 @@
 import { Modal, ModalContent, ModalHeader, ModalBody, Button, useDisclosure, Input } from "@nextui-org/react";
 import { useForm } from "react-hook-form";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { bucket,db } from "../../lib/firebase"; 
+import { auth, bucket,db } from "../../lib/firebase"; 
 import { useEffect, useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
 
 export default function NewPostForm() {
   const { isOpen, onOpen, onClose } = useDisclosure(); 
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit,reset } = useForm();
   const [file, setFile] = useState(null);
-  const [imgUrl, setImgUrl] = useState("");
+  const currentUser:any = auth.currentUser;
 
   const onSubmit = async (values:any) => {
     const selectedFile = values.image[0];
-    setFile(selectedFile.name); 
+    const  filename = selectedFile.name
+    setFile(filename); 
 
-    const storageRef = ref(bucket, `posts/${selectedFile.name}`);
+    const storageRef = ref(bucket, `posts/${filename}`);
 
     try {
       const snapshot = await uploadBytes(storageRef, selectedFile);
@@ -23,15 +24,16 @@ export default function NewPostForm() {
 
       const downloadURL:any = await getDownloadURL(storageRef);
       console.log('Download URL:', downloadURL);
-      setImgUrl(downloadURL); 
       window.alert('File uploaded successfully!');
       onClose(); 
 
-      await setDoc(doc(db,"posts","post1"),{
+      await setDoc(doc(db,"posts",filename),{
+        userId: currentUser.uid,
         title:values.title,
         description:values.description,
-        image:downloadURL,
-      })
+        imageUrl:downloadURL,
+      });
+      reset()
     } catch (error) {
       console.error('Error uploading file:', error);
     }
@@ -43,7 +45,6 @@ export default function NewPostForm() {
       getDownloadURL(postRef)
         .then((url:any) => {
           console.log('Download URL:', url);
-          setImgUrl(url); 
         })
         .catch((error) => {
           console.error('Error retrieving download URL:', error);
@@ -92,7 +93,6 @@ export default function NewPostForm() {
           </form>
         </ModalContent>
       </Modal>
-      {imgUrl && <img src={imgUrl} alt="" className="h-2/3 mx-auto my-auto absolute inset-0" />}
     </>
   );
 }

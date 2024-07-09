@@ -1,39 +1,97 @@
-
-import { Card } from "@nextui-org/react"
-import NewPostForm from "./newPostForm"
-import { useEffect } from "react"
-import { collection, query, getDocs } from "firebase/firestore";
+import { Card } from "@nextui-org/react";
+import NewPostForm from "./newPostForm";
+import { useEffect, useState } from "react";
+import { collection, query, getDocs, onSnapshot} from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
+type Post = {
+  id: string;
+  imageUrl: string;
+  user: string;
+  title: string;
+  description: string;
+};
+
 const Feed = () => {
-  useEffect(()=>{
-    const fetchPosts = async () => {
-      const q = query(collection(db,"posts"))
-      const posts = await getDocs(q);
-      posts.docs.map((posts:any)=>{
-          console.log("feed:",posts)
-      })
-    }
-    fetchPosts();
-  },[]);
-    
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [userNames, setUserNames] = useState<{ [email: string]: string }>({});
+
+  useEffect(() => {
+    const fetchPostsAndUsers = async () => {
+      try {
+        const postsQuery = query(collection(db, "posts"));
+        const unsubscribe = onSnapshot(postsQuery, async (querySnapshot) => {
+          const postsArray: Post[] = [];
+          const userNameMap: { [email: string]: string } = {};
+
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            postsArray.push({
+              id: doc.id,
+              imageUrl: data.imageUrl ?? "",
+              user: data.user ?? "",
+              title: data.title ?? "",
+              description: data.description ?? "",
+            });
+
+            const userEmail = data.user ?? "";
+            if (!(userEmail in userNameMap)) {
+              userNameMap[userEmail] = "Unknown User";
+            }
+          });
+
+          setPosts(postsArray);
+
+          const userEmails = Object.keys(userNameMap);
+
+          await Promise.all(userEmails.map(async (email) => {
+            const usersQuery = query(collection(db, "users"));
+            const userSnapshot = await getDocs(usersQuery);
+            if (!userSnapshot.empty) {
+              userSnapshot.forEach((userDoc) => {
+                const userData = userDoc.data();
+                userNameMap[email] = userData.username ?? "Unknown User";
+              });
+            }
+          }));
+
+          setUserNames(userNameMap);
+        });
+
+        return unsubscribe;
+      } catch (error) {
+        console.error("Error fetching posts or users: ", error);
+      }
+    };
+
+    fetchPostsAndUsers();
+  }, []);
+
+
+
   return (
     <main className="p-4">
-      <NewPostForm></NewPostForm>
-      <div className="w-full min-h-screen flex flex-col justify-center items-start p-8 ">
-      <div className="grid grid-cols-1 gap-4">
-      <Card className="w-64 p-4 bg-violet-200">
-        <div className="rounded-lg h-56">
-        <img src="https://firebasestorage.googleapis.com/v0/b/social-media1-28ff1.appspot.com/o/posts%2Fphoto1.jpeg?alt=media&token=9cf6fa01-31d1-4433-9158-b4082952389e" alt=""  />
+      <NewPostForm />
+      <div className="w-full min-h-screen flex flex-col justify-center items-start p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {posts.map((post) => (
+            <Card key={post.id} className="w-full p-4 bg-violet-200 shadow-md rounded-lg">
+              <div className="rounded-lg overflow-hidden h-56">
+                <img
+                  src={post.imageUrl}
+                  alt={post.title}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
+              <p className="mt-4 text-sm text-gray-500">User: {userNames[post.user]}</p>
+              <p className="mt-2 text-lg font-semibold">Title: {post.title}</p>
+              <p className="text-gray-600">Description: {post.description}</p>
+            </Card>
+          ))}
         </div>
-        <p>User: Prit Senjaliya</p>
-        <p>Title: Photo</p>
-        <p>Description:</p>
-      </Card>
-      </div>
       </div>
     </main>
-  )
-}
+  );
+};
 
-export default Feed
+export default Feed; 
