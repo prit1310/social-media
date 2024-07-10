@@ -15,7 +15,7 @@ const Layout = () => {
 
   return (
     <div>
-      <Button className="fixed z-50 top-4 right-4" color="secondary" onClick={logout}><LogOut className="h-5"></LogOut>Logout</Button>
+      <Button className="fixed z-50 top-4 right-1" color="secondary" onClick={logout}><LogOut className="h-5"></LogOut>Logout</Button>
       <Navbar/>
       <Outlet />
     </div>

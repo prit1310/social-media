@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { auth, bucket,db } from "../../lib/firebase"; 
 import { useEffect, useState } from "react";
-import { doc, setDoc } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 
 export default function NewPostForm() {
   const { isOpen, onOpen, onClose } = useDisclosure(); 
@@ -27,7 +27,7 @@ export default function NewPostForm() {
       window.alert('File uploaded successfully!');
       onClose(); 
 
-      await setDoc(doc(db,"posts",filename),{
+      await addDoc(collection(db,"posts"),{
         user: currentUser.email,
         title:values.title,
         description:values.description,

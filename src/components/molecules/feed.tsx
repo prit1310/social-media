@@ -1,8 +1,8 @@
 import { Card } from "@nextui-org/react";
-import NewPostForm from "./newPostForm";
+import { collection, getDocs, onSnapshot, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { collection, query, getDocs, onSnapshot} from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import NewPostForm from "./newPostForm";
 
 type Post = {
   id: string;
@@ -14,7 +14,6 @@ type Post = {
 
 const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [userNames, setUserNames] = useState<{ [email: string]: string }>({});
 
   useEffect(() => {
     const fetchPostsAndUsers = async () => {
@@ -54,8 +53,6 @@ const Feed = () => {
               });
             }
           }));
-
-          setUserNames(userNameMap);
         });
 
         return unsubscribe;
@@ -83,7 +80,7 @@ const Feed = () => {
                   className="w-full h-full object-cover rounded-lg"
                 />
               </div>
-              <p className="mt-4 text-sm text-gray-500">User: {userNames[post.user]}</p>
+              <p className="mt-4 text-sm text-gray-500">User: {post.user}</p>
               <p className="mt-2 text-lg font-semibold">Title: {post.title}</p>
               <p className="text-gray-600">Description: {post.description}</p>
             </Card>

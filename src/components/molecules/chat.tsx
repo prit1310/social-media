@@ -1,10 +1,10 @@
 
-const Chat = () => {
+const chat = () => {
   return (
     <div>
-      Chat
+      chat
     </div>
   )
 }
 
-export default Chat
+export default chat
