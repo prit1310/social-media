@@ -70,7 +70,7 @@ const Feed = () => {
     <main className="p-4">
       <NewPostForm />
       <div className="w-full min-h-screen flex flex-col justify-center items-start p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-40 ml-10">
           {posts.map((post) => (
             <Card key={post.id} className="w-full p-4 bg-violet-200 shadow-md rounded-lg">
               <div className="rounded-lg overflow-hidden h-56">
