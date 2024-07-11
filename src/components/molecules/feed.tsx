@@ -1,5 +1,5 @@
 import { Card } from "@nextui-org/react";
-import { collection, getDocs, onSnapshot, query } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "../../lib/firebase";
 import NewPostForm from "./newPostForm";
@@ -21,7 +21,6 @@ const Feed = () => {
         const postsQuery = query(collection(db, "posts"));
         const unsubscribe = onSnapshot(postsQuery, async (querySnapshot) => {
           const postsArray: Post[] = [];
-          const userNameMap: { [email: string]: string } = {};
 
           querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -33,36 +32,19 @@ const Feed = () => {
               description: data.description ?? "",
             });
 
-            const userEmail = data.user ?? "";
-            if (!(userEmail in userNameMap)) {
-              userNameMap[userEmail] = "Unknown User";
-            }
-          });
-
           setPosts(postsArray);
-
-          const userEmails = Object.keys(userNameMap);
-
-          await Promise.all(userEmails.map(async (email) => {
-            const usersQuery = query(collection(db, "users"));
-            const userSnapshot = await getDocs(usersQuery);
-            if (!userSnapshot.empty) {
-              userSnapshot.forEach((userDoc) => {
-                const userData = userDoc.data();
-                userNameMap[email] = userData.username ?? "Unknown User";
-              });
-            }
-          }));
         });
 
         return unsubscribe;
-      } catch (error) {
-        console.error("Error fetching posts or users: ", error);
-      }
-    };
-
+    });
+    }
+    catch(error)
+    {
+      console.log(error)
+    }
+  };
     fetchPostsAndUsers();
-  }, []);
+  },[]);
 
 
 
