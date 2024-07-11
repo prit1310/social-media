@@ -12,8 +12,9 @@ export default function NewPostForm() {
   const currentUser:any = auth.currentUser;
 
   const onSubmit = async (values:any) => {
+    const timestamp = new Date().getTime()
     const selectedFile = values.image[0];
-    const  filename = selectedFile.name
+    const  filename:any = selectedFile.name + timestamp.toString()
     setFile(filename); 
 
     const storageRef = ref(bucket, `posts/${filename}`);
@@ -27,12 +28,14 @@ export default function NewPostForm() {
       window.alert('File uploaded successfully!');
       onClose(); 
 
+      if(auth.currentUser){
       await addDoc(collection(db,"posts"),{
         user: currentUser.email,
         title:values.title,
         description:values.description,
         imageUrl:downloadURL,
       });
+    }
       reset()
     } catch (error) {
       console.error('Error uploading file:', error);
