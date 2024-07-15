@@ -1,39 +1,54 @@
 import { Button, Card, Input, ScrollShadow } from "@nextui-org/react"
 import { SendIcon } from "lucide-react"
-import { useState } from "react"
-import { db,auth } from "../../lib/firebase"
-import { collection,addDoc,query,where,getDocs} from "firebase/firestore"
+import { useEffect, useState } from "react"
+import { db, auth } from "../../lib/firebase"
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore"
+
+interface Message {
+  message: string;
+  sender: string;
+  receiver: string;
+}
 
 const Chats = () => {
   const [message, setMessage] = useState("")
+  const [dataArray, setDataArray] = useState<Message[]>([])
+
   async function addMessage() {
-    const messageRef = collection(db,"chats")
-    if(auth.currentUser){
-    await addDoc(messageRef,{
-      message: message,
-      sender:auth.currentUser?.email,
-      reciever: "pritpatel1310@gmail.com"
-    })
-    setMessage("")
+    const messageRef = collection(db, "chats")
+    if (auth.currentUser) {
+      await addDoc(messageRef, {
+        message: message,
+        sender: auth.currentUser?.email,
+        reciever: "pritpatel1310@gmail.com"
+      })
+      setMessage("")
+      getMessages()
     }
-    else{
+    else {
       console.error("You are not logged in")
     }
   }
-  async function getMessages(){
-    if(auth.currentUser){
-    const q = query(collection(db,"chats"),where("sender","==",auth.currentUser.email),where("reciever","==","pritpatel1310@gmail.com"))
-    getDocs(q).then((querySnapShot)=>{
-      querySnapShot.forEach((doc)=>{
-        console.log(doc.data())
-      })
-    }).catch((e)=>console.error(e))
+  async function getMessages() {
+    if (auth.currentUser) {
+      const q = query(collection(db, "chats"), where("sender", "==", auth.currentUser.email), where("reciever", "==", "pritpatel1310@gmail.com"))
+      const querySnapShot = await getDocs(q);
+      const uniqueMessages = new Set<Message>(); 
+
+      querySnapShot.forEach((doc:any) => {
+        uniqueMessages.add(doc.data()); 
+      });
+      console.log(uniqueMessages)
+      setDataArray(Array.from(uniqueMessages));
     }
-    else{
+    else {
       console.error('sign in')
     }
   }
-  getMessages()
+
+  useEffect(() => {
+    getMessages()
+  }, [])
 
   return (
     <>
@@ -54,6 +69,7 @@ const Chats = () => {
               { setMessage(e.target.value) }
             }
             }
+            value={message}
           />
           <Button isIconOnly className="fixed bottom-20 right-24" onClick={addMessage}>
             <SendIcon></SendIcon>
@@ -61,10 +77,14 @@ const Chats = () => {
         </div>
         <section className="h-[70%] w-full">
           <ScrollShadow className="h-full w-full">
-            <Card className="max-w-[80%] min-w-40 p-4 ">
-              <h4 className="font-bold my-1">User</h4>
-              <p>Hello!!</p>
-            </Card>
+            {dataArray.map((msg, index) => (
+              <Card key={index} className="max-w-[80%] min-w-40 p-4 m-4">
+                <div>
+                <h4 className="font-bold my-1">{msg.sender}</h4>
+                <p>{msg.message}</p>
+                </div>
+              </Card>
+            ))}
           </ScrollShadow>
         </section>
       </main>
