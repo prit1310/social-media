@@ -4,10 +4,13 @@ import { Button } from "@nextui-org/button"
 import { LogOut } from "lucide-react"
 import {auth} from "../../lib/firebase"
 import { signOut } from "firebase/auth"
+import { useStore } from "../../stores/authStore"
 
 const Layout = () => {
   const navigate = useNavigate()
+  const {logOut}:any = useStore()
   async function logout(){
+    logOut()
     signOut(auth).then(
       ()=>navigate('/login')
     )

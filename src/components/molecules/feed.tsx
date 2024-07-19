@@ -3,6 +3,9 @@ import { collection, onSnapshot, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "../../lib/firebase";
 import NewPostForm from "./newPostForm";
+import { useStore } from "../../stores/authStore";
+import { useNavigate } from "react-router-dom";
+import logo from "../../assets/logo.png"
 
 type Post = {
   id: string;
@@ -14,12 +17,28 @@ type Post = {
 
 const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const { loggedIn}: any = useStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("LoggedIn State:", loggedIn);
+
+    if (!loggedIn) {
+      navigate("/login");
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     const fetchPostsAndUsers = async () => {
       try {
         const postsQuery = query(collection(db, "posts"));
-        const unsubscribe = onSnapshot(postsQuery, async (querySnapshot) => {
+        const unsubscribe = onSnapshot(postsQuery, (querySnapshot) => {
           const postsArray: Post[] = [];
 
           querySnapshot.forEach((doc) => {
@@ -31,26 +50,30 @@ const Feed = () => {
               title: data.title ?? "",
               description: data.description ?? "",
             });
+          });
 
           setPosts(postsArray);
         });
 
         return unsubscribe;
-    });
-    }
-    catch(error)
-    {
-      console.log(error)
-    }
-  };
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
     fetchPostsAndUsers();
-  },[]);
 
-
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [loggedIn, navigate]);
 
   return (
     <main className="p-4">
       <NewPostForm />
+      <div className="flex justify-center items-center mt-4 mb-8">
+        <img src={logo} alt="InstaBook" className="w-40 h-auto mt-[-60px]" />
+      </div>
       <div className="w-full min-h-screen flex flex-col justify-center items-start p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-40 ml-10">
           {posts.map((post) => (
@@ -73,4 +96,4 @@ const Feed = () => {
   );
 };
 
-export default Feed; 
+export default Feed;

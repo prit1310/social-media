@@ -5,6 +5,7 @@ import { auth } from "../../lib/firebase"
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth"
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useStore } from "../../stores/authStore";
 
 interface LoginFormInterface {
   email: string,
@@ -15,11 +16,13 @@ const provider = new GoogleAuthProvider();
 
 const Login = () => {
   const [visibility, setVisibility] = useState("password");
+  const { logIn }:any = useStore();
   const { register, handleSubmit } = useForm<LoginFormInterface>();
   const navigate = useNavigate()
   async function onSubmit(values: LoginFormInterface) {
     signInWithEmailAndPassword(auth, values.email, values.password).then(
       () => {
+        logIn()
         navigate("/")
       }
     )
@@ -28,6 +31,7 @@ const Login = () => {
   async function signInWithGoogle() {
     signInWithPopup(auth, provider).then(
       () => {
+        logIn()
         navigate("/")
       }
     )
