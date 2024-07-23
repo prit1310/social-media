@@ -2,13 +2,13 @@ import { Button, Card, Input, ScrollShadow } from "@nextui-org/react";
 import { SendIcon, ArrowLeftIcon } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { db, auth } from "../../lib/firebase";
-import { collection, addDoc, query, where, onSnapshot, or, and } from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot, or, and, Timestamp } from "firebase/firestore";
 
 interface Message {
   message: string;
   sender: string;
   receiver: string;
-  timestamp: number; 
+  timestamp: any; 
 }
 
 const Chats = () => {
@@ -43,7 +43,7 @@ const Chats = () => {
         message: "",
         sender: auth.currentUser.email!,
         receiver: newReceiver,
-        timestamp: Date.now()
+        timestamp: Timestamp.now()
       };
       setDataArray(prev => [...prev, newMessage]);
       setNewReceiver("");
