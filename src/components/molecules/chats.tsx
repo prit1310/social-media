@@ -2,7 +2,7 @@ import { Button, Card, Input, ScrollShadow } from "@nextui-org/react";
 import { SendIcon, ArrowLeftIcon } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { db, auth } from "../../lib/firebase";
-import { collection, addDoc, query, where, getDocs, or, and } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, onSnapshot, or, and } from "firebase/firestore";
 
 interface Message {
   message: string;
@@ -21,8 +21,8 @@ const Chats = () => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   async function addMessage() {
-    const messageRef = collection(db, "chats");
     if (auth.currentUser) {
+      const messageRef = collection(db, "chats");
       const timestamp = Date.now();
       await addDoc(messageRef, {
         message: message,
@@ -30,8 +30,13 @@ const Chats = () => {
         receiver: currentChat,
         timestamp
       });
+
+      const user = auth.currentUser.email
+      setSpecificChat(prev => [
+        ...prev,
+        { message, sender: user!, receiver: currentChat, timestamp }
+      ]);
       setMessage("");
-      getSpecificChat(currentChat);
     } else {
       console.error("You are not logged in");
     }
@@ -77,13 +82,6 @@ const Chats = () => {
     getMessages();
   }, []);
 
-  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-    event.preventDefault();
-    event.returnValue = "";
-  };
-
-  window.addEventListener("beforeunload", handleBeforeUnload);
-  
   async function getSpecificChat(receiver: string) {
     if (!receiver) {
       console.error('Receiver is undefined');
@@ -99,20 +97,29 @@ const Chats = () => {
           and(where("sender", "==", receiver), where("receiver", "==", user))
         )
       );
-      const querySnapshot = await getDocs(q);
-      const messages: Message[] = [];
 
-      querySnapshot.forEach((doc) => {
-        const data = doc.data() as Message;
-        messages.push(data);
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const messages: Message[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data() as Message;
+          messages.push(data);
+        });
+
+        messages.sort((a, b) => a.timestamp - b.timestamp);
+        setSpecificChat(messages);
       });
 
-      messages.sort((a, b) => a.timestamp - b.timestamp);
-      setSpecificChat(messages);
+      return () => unsubscribe(); 
     } else {
       console.error('Please sign in');
     }
   }
+
+  useEffect(() => {
+    if (currentChat) {
+      getSpecificChat(currentChat);
+    }
+  }, [currentChat]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -146,7 +153,6 @@ const Chats = () => {
                   isHoverable
                   onClick={() => {
                     setCurrentChat(participant);
-                    getSpecificChat(participant);
                   }}
                 >
                   <h4 className="font-semibold">{participant || "No Participant"}</h4>
