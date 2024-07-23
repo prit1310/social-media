@@ -2,13 +2,13 @@ import { Button, Card, Input, ScrollShadow } from "@nextui-org/react";
 import { SendIcon, ArrowLeftIcon } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { db, auth } from "../../lib/firebase";
-import { collection, addDoc, query, where, onSnapshot, or, and, Timestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot, or, and, Timestamp, getDocs, limit, orderBy, startAfter } from "firebase/firestore";
 
 interface Message {
   message: string;
   sender: string;
   receiver: string;
-  timestamp: any; 
+  timestamp: any;
 }
 
 const Chats = () => {
@@ -17,8 +17,10 @@ const Chats = () => {
   const [dataArray, setDataArray] = useState<Message[]>([]);
   const [specificChat, setSpecificChat] = useState<Message[]>([]);
   const [newReceiver, setNewReceiver] = useState("");
+  const [lastVisible, setLastVisible] = useState<any>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   async function addMessage() {
     if (auth.currentUser) {
@@ -70,7 +72,7 @@ const Chats = () => {
         setDataArray(messages);
       });
 
-      return () => unsubscribe(); 
+      return () => unsubscribe();
     } else {
       console.error('Please sign in');
     }
@@ -96,11 +98,58 @@ const Chats = () => {
 
         messages.sort((a, b) => a.timestamp - b.timestamp);
         setSpecificChat(messages);
+        if (messages.length > 0) {
+          setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+        }
       });
 
-      return () => unsubscribe(); 
+      return () => unsubscribe();
     }
   }, [currentChat]);
+
+  const loadMoreMessages = async () => {
+    if (auth.currentUser && lastVisible) {
+      const user = auth.currentUser.email;
+      const q = query(
+        collection(db, "chats"),
+        or(
+          and(where("sender", "==", user), where("receiver", "==", currentChat)),
+          and(where("sender", "==", currentChat), where("receiver", "==", user))
+        ),
+        orderBy("timestamp", "desc"),
+        startAfter(lastVisible),
+        limit(10) // adjust as needed
+      );
+
+      const querySnapshot = await getDocs(q);
+      const messages: Message[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data() as Message;
+        messages.push(data);
+      });
+
+      messages.sort((a, b) => a.timestamp - b.timestamp);
+      setSpecificChat(prevMessages => [...prevMessages, ...messages]);
+      if (messages.length > 0) {
+        setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+      }
+    }
+  };
+
+  const handleScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      if (scrollHeight - scrollTop <= clientHeight + 50) { // Adjust threshold as needed
+        loadMoreMessages();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    container?.addEventListener('scroll', handleScroll);
+    return () => container?.removeEventListener('scroll', handleScroll);
+  }, [chatContainerRef.current]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -156,7 +205,7 @@ const Chats = () => {
           )}
           <h2 className="text-lg text-white font-semibold flex-grow">{currentChat}</h2>
         </div>
-        <section className="h-[calc(100vh-8rem)] w-full">
+        <section className="h-[calc(100vh-12rem)] w-full overflow-auto" ref={chatContainerRef}>
           <ScrollShadow className="h-full w-full px-2">
             {specificChat.map((msg, index) => (
               <div
@@ -176,19 +225,23 @@ const Chats = () => {
           </ScrollShadow>
         </section>
         {currentChat && (
-          <div className="fixed bottom-20 left-0 w-full p-4 bg-blue-500 z-10">
-            <div className="flex items-center">
-              <Input
-                className="flex-grow"
-                placeholder="Enter a message"
-                onChange={(e) => setMessage(e.target.value)}
-                value={message}
-              />
-              <Button isIconOnly className="ml-2" color="secondary" onClick={addMessage}>
-                <SendIcon />
-              </Button>
-            </div>
-          </div>
+        <div className="fixed bottom-0 left-0 w-full flex justify-center p-4">
+        <Input
+          className="w-1/2 fixed bottom-20 right-24 md:right-[172px] md:bottom-20 md:w-1/2 sm:w-3/4 sm:right-4 sm:bottom-12"
+          placeholder="Enter a message"
+          onChange={(e) => setMessage(e.target.value)}
+          value={message}
+        />
+        <Button
+          isIconOnly
+          className="fixed bottom-20 right-24 md:right-24 md:bottom-20 sm:right-4 sm:bottom-12"
+          color="secondary"
+          onClick={addMessage}
+        >
+          <SendIcon />
+        </Button>
+      </div>
+      
         )}
       </main>
     </>
