@@ -2,7 +2,7 @@ import { Button, Card, Input, ScrollShadow } from "@nextui-org/react";
 import { SendIcon, ArrowLeftIcon } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { db, auth } from "../../lib/firebase";
-import { collection, addDoc, query, where, getDocs, onSnapshot, or, and } from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot, or, and } from "firebase/firestore";
 
 interface Message {
   message: string;
@@ -31,11 +31,6 @@ const Chats = () => {
         timestamp
       });
 
-      const user = auth.currentUser.email
-      setSpecificChat(prev => [
-        ...prev,
-        { message, sender: user!, receiver: currentChat, timestamp }
-      ]);
       setMessage("");
     } else {
       console.error("You are not logged in");
@@ -57,44 +52,38 @@ const Chats = () => {
     }
   }
 
-  async function getMessages() {
+  useEffect(() => {
     if (auth.currentUser) {
       const q = query(
         collection(db, "chats"),
         or(where("sender", "==", auth.currentUser.email), where("receiver", "==", auth.currentUser.email))
       );
-      const querySnapshot = await getDocs(q);
-      const messages: Message[] = [];
 
-      querySnapshot.forEach((doc) => {
-        const data = doc.data() as Message;
-        messages.push(data);
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const messages: Message[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data() as Message;
+          messages.push(data);
+        });
+
+        messages.sort((a, b) => a.timestamp - b.timestamp);
+        setDataArray(messages);
       });
 
-      messages.sort((a, b) => a.timestamp - b.timestamp);
-      setDataArray(messages);
+      return () => unsubscribe(); 
     } else {
       console.error('Please sign in');
     }
-  }
-
-  useEffect(() => {
-    getMessages();
   }, []);
 
-  async function getSpecificChat(receiver: string) {
-    if (!receiver) {
-      console.error('Receiver is undefined');
-      return;
-    }
-
-    if (auth.currentUser) {
+  useEffect(() => {
+    if (currentChat && auth.currentUser) {
       const user = auth.currentUser.email;
       const q = query(
         collection(db, "chats"),
         or(
-          and(where("sender", "==", user), where("receiver", "==", receiver)),
-          and(where("sender", "==", receiver), where("receiver", "==", user))
+          and(where("sender", "==", user), where("receiver", "==", currentChat)),
+          and(where("sender", "==", currentChat), where("receiver", "==", user))
         )
       );
 
@@ -110,14 +99,6 @@ const Chats = () => {
       });
 
       return () => unsubscribe(); 
-    } else {
-      console.error('Please sign in');
-    }
-  }
-
-  useEffect(() => {
-    if (currentChat) {
-      getSpecificChat(currentChat);
     }
   }, [currentChat]);
 
