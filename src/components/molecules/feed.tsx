@@ -5,7 +5,7 @@ import { db } from "../../lib/firebase";
 import NewPostForm from "./newPostForm";
 import { useStore } from "../../stores/authStore";
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/logo.png"
+import logo from "../../assets/logo.png";
 
 type Post = {
   id: string;
@@ -17,7 +17,7 @@ type Post = {
 
 const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const { loggedIn}: any = useStore();
+  const { loggedIn }: any = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,11 +71,11 @@ const Feed = () => {
   return (
     <main className="p-4">
       <NewPostForm />
-      <div className="flex justify-center items-center mt-4 mb-8">
+      <div className="flex justify-center items-center mt-4 mb-8 md:w-10">
         <img src={logo} alt="InstaBook" className="w-40 h-auto mt-[-60px]" />
       </div>
-      <div className="w-full min-h-screen flex flex-col justify-center items-start p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-40 ml-10">
+      <div className="w-full min-h-screen flex flex-col items-center p-4 bg-gray-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 w-full max-w-7xl">
           {posts.map((post) => (
             <Card key={post.id} className="w-full p-4 bg-violet-200 shadow-md rounded-lg">
               <div className="rounded-lg overflow-hidden h-56">

@@ -16,12 +16,13 @@ type Post = {
 };
 
 const Account = () => {
-  const [imgUrl,setImgUrl] = useState("")
-  const [postsCount,setPostsCount] = useState(0)
+  const [imgUrl, setImgUrl] = useState("");
+  const [postsCount, setPostsCount] = useState(0);
   const [posts, setPosts] = useState<Post[]>([]);
   const [userData, setUserData] = useState({ bio: "", username: "" });
-  const { isOpen, onOpen, onOpenChange,onClose} = useDisclosure();
-  const { register, handleSubmit,reset } = useForm();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const { register, handleSubmit, reset } = useForm();
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -42,15 +43,21 @@ const Account = () => {
         console.error("Error fetching user data:", error);
       }
     };
-  
+
     fetchUserData();
   }, []);
-  
+
+  const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    event.preventDefault();
+    event.returnValue = "";
+  };
+
+  window.addEventListener("beforeunload", handleBeforeUnload);
 
   async function onSubmit(values: any) {
-    const timestamp = new Date().getTime()
+    const timestamp = new Date().getTime();
     const selectedFile = values.image[0];
-    const filename: any = selectedFile.name + timestamp.toString()
+    const filename: any = selectedFile.name + timestamp.toString();
     const storageRef = ref(bucket, `profilePic/${filename}`);
     try {
       await setDoc(doc(db, `users/${auth.currentUser?.email}`), {
@@ -64,12 +71,12 @@ const Account = () => {
       const snapshot = await uploadBytes(storageRef, selectedFile);
       console.log('Uploaded a blob or file!', snapshot);
 
-      const downloadURL:any = await getDownloadURL(storageRef);
-      setImgUrl(downloadURL)
+      const downloadURL: any = await getDownloadURL(storageRef);
+      setImgUrl(downloadURL);
       console.log('Download URL:', downloadURL);
       window.alert('File uploaded successfully!');
-      onClose(); 
-      if(auth.currentUser){
+      onClose();
+      if (auth.currentUser) {
         await setDoc(doc(db, `profilePics/${auth.currentUser?.email}`), {
           user: auth.currentUser.email,
           imageUrl: downloadURL,
@@ -85,7 +92,7 @@ const Account = () => {
     const fetchPostsAndUsers = async () => {
       try {
         if (!auth.currentUser) return;
-        
+
         const postsQuery = query(collection(db, "posts"), where("user", "==", auth.currentUser.email));
         const unsubscribe = onSnapshot(postsQuery, async (querySnapshot) => {
           const postsArray: Post[] = [];
@@ -102,7 +109,7 @@ const Account = () => {
           });
 
           setPosts(postsArray);
-          setPostsCount(postsArray.length)
+          setPostsCount(postsArray.length);
         });
 
         return unsubscribe;
@@ -115,20 +122,25 @@ const Account = () => {
 
   return (
     <>
-      <div className="bg-black text-white">
-        <div className="flex pt-2">
-      <p className="h-13 w-13 gap-4 flex items-center ml-2">
-        <img src={imgUrl} className="rounded-full h-[80px] w-[80px] object-cover"/>
-      </p>
-      <h1 className="font-semibold ml-2 pt-4 pl-20">Posts: {postsCount}</h1>
+      <div className="bg-black text-white p-4 md:p-6">
+        <div className="flex flex-col md:flex-row items-center md:items-start">
+          <p className="mb-4 md:mb-0">
+            <img src={imgUrl} className="rounded-full h-20 w-20 object-cover" />
+          </p>
+          <div className="ml-0 md:ml-4">
+            <h1 className="font-semibold text-lg md:text-xl">Posts: {postsCount}</h1>
+            <h1 className="font-bold text-lg md:text-xl mt-2">{auth.currentUser?.email}</h1>
+            <h1 className="font-bold text-lg md:text-xl mt-2">{userData.username}</h1>
+            <h1 className="font-semibold text-sm md:text-lg mt-2">{`Bio:${userData.bio}`}</h1>
+            <Button onPress={onOpen} color="primary" className="mt-4">
+              Update profile
+            </Button>
+          </div>
+        </div>
       </div>
-      <h1 className="font-bold ml-2 mt-2">{auth.currentUser?.email}</h1>
-      <h1 className="font-bold ml-2 mt-2">{userData.username}</h1>
-      <h1 className="font-semibold ml-2">Bio: {userData.bio}</h1>
-      <Button onPress={onOpen} color="primary" className="h-7 ml-1 mt-2 mb-2">Update profile</Button>
-      </div>
-      <div className="w-full min-h-screen flex flex-col justify-center items-start p-8 bg-gray-300">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-40 ml-10">
+
+      <div className="w-full min-h-screen flex flex-col items-center p-4 bg-gray-300">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {posts.map((post) => (
             <Card key={post.id} className="w-full p-4 bg-violet-200 shadow-md rounded-lg">
               <div className="rounded-lg overflow-hidden h-56">
@@ -139,40 +151,24 @@ const Account = () => {
                 />
               </div>
               <p className="mt-4 text-sm text-gray-500">User: {post.user}</p>
-              <p className="mt-2 text-lg font-semibold">Title: {post.title}</p>
+              <p className="mt-2 text-md font-semibold">Title: {post.title}</p>
               <p className="text-gray-600">Description: {post.description}</p>
             </Card>
           ))}
         </div>
       </div>
-      <Modal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        placement="top-center"
-      >
+
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Update profile</ModalHeader>
+              <ModalHeader className="flex flex-col gap-2 text-lg font-semibold">Update profile</ModalHeader>
               <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                 <ModalBody>
-                  <Input {...register("name")}
-                    autoFocus
-                    type="text"
-                    label="Name:"
-                    placeholder="Enter your name:"
-                    variant="bordered"
-                  />
-                  <Input {...register("bio")}
-                    autoFocus
-                    type="text"
-                    label="Bio:"
-                    placeholder="Enter your bio:"
-                    variant="bordered"
-                  />
+                  <Input {...register("name")} type="text" label="Name:" placeholder="Enter your name:" variant="bordered" />
+                  <Input {...register("bio")} type="text" label="Bio:" placeholder="Enter your bio:" variant="bordered" />
                   <Input
                     {...register("image")}
-                    autoFocus
                     type="file"
                     accept="image/*"
                     placeholder="Upload your profile image:"
